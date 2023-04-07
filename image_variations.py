@@ -1,16 +1,27 @@
+import torch
 from diffusers import StableDiffusionImageVariationPipeline
 from PIL import Image
 from torchvision import transforms
 
 
-device = "mps"
-sd_pipe = StableDiffusionImageVariationPipeline.from_pretrained(
+# torch.backends.cudnn.benchmark = True
+# torch.backends.cuda.matmul.allow_tf32 = True
+
+device = "cuda"
+
+pipe = StableDiffusionImageVariationPipeline.from_pretrained(
   "lambdalabs/sd-image-variations-diffusers",
   revision="v2.0",
+  torch_dtype=torch.float16,
   )
-sd_pipe = sd_pipe.to(device)
 
-im = Image.open("/Users/leo/Desktop/fun/programming/SoFAA/test_imgs/test_image.jpg")
+pipe = pipe.to(device)
+pipe.enable_xformers_memory_efficient_attention()
+pipe.unet.to(memory_format=torch.channels_last)
+# pipe.enable_attention_slicing()
+
+# image preprocessing
+im = Image.open("/home/fastdh/server/SoFAA/test_imgs/ast.png")
 tform = transforms.Compose([
     transforms.ToTensor(),
     transforms.Resize(
@@ -24,5 +35,8 @@ tform = transforms.Compose([
 ])
 inp = tform(im).to(device).unsqueeze(0)
 
-out = sd_pipe(inp, guidance_scale=3)
-out["images"][0].save("result.jpg")
+with torch.inference_mode():
+  out = pipe(inp, guidance_scale=3)
+
+out["images"][0].save("/home/fastdh/server/SoFAA/test_imgs/variation_result.jpg")
+out["images"][0].show()
