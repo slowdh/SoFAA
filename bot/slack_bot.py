@@ -2,7 +2,7 @@ import os
 
 import slack
 from dotenv import load_dotenv
-from flask import Flask
+from flask import Flask, request, Response
 from slackeventsapi import SlackEventAdapter
 
 
@@ -28,6 +28,27 @@ def handle_message(payload):
 
     if BOT_ID != user_id:
         client.chat_postMessage(channel=channel_id, text=text)
+
+
+@app.route('/design', methods=['POST'])
+def handle_design():
+    data = request.form
+    channel_id = data.get('channel_id')
+    text = data.get('text').strip("--").replace("--", ', ')
+    client.chat_postMessage(channel=channel_id, text=f":bubbles: Designing :: [{text}]")
+
+    return Response(), 200
+
+
+@app.route('/develop', methods=['POST'])
+def handle_develop():
+    data = request.form
+    channel_id = data.get('channel_id')
+    text = data.get('text')
+    client.chat_postMessage(channel=channel_id, text=f":building_construction: Developing :: [{text}]")
+
+    return Response(), 200
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=5023)
