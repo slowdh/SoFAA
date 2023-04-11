@@ -84,7 +84,7 @@ def handle_design():
 def handle_develop():
     data = request.form
     channel_id = data.get('channel_id')
-    text = data.get('text')
+    text = data.get('text').strip("--")
     client.chat_postMessage(channel=channel_id, text=f":building_construction: Developing :: [{text}]")
 
     return Response(), 200
