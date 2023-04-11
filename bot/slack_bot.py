@@ -33,7 +33,7 @@ def get_welcome_message():
         'text': (
                 ':bubbles: *SoFAA에 오신 것을 환영합니다!* \n\n\n'
                 'SoFAA는 현재 영어만 지원하고 있으며, 디자인은 #design 채널에서 생성 가능합니다. \n\n\n\n\n'
-                '다음 명령어를 이용해서 디자인을 진행해보세요. \n\n\n'
+                '#design 채널에서 다음 명령어를 입력해서 디자인을 진행해보세요. \n\n\n'
                 ':classical_building: */design 명령어와 --키워드1 --키워드2 --키워드3 ... 방식으로 디자인을 생성해보세요.* \n\n\n'
                 'ex) /design --organic --futuristic --zaha hadid --sunset\n\n\n'
                 ':classical_building: */develop 명령어와 --image_id 입력을 통해서 생성된 디자인을 디벨롭해보세요.* \n\n\n'
