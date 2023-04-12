@@ -31,7 +31,7 @@ current_users = set()
 # set queue, model
 task_queue = Queue()
 processed_queue = Queue()
-sofaa = ArchiDiffusionModel(batch_size=1, num_inference_steps=10)
+sofaa = ArchiDiffusionModel(batch_size=4, num_inference_steps=10)
 
 # functions
 def upload_file_to_slack_client(processed_queue):
@@ -107,14 +107,17 @@ def handle_design():
     prompt = text.strip("--").replace("--", ', ')
 
     task = {
+        'type': 'design',
         'prompt': prompt,
         'channel': channel_id,
         'user_id': user_id,
     }
     task_queue.put(task)
+
     client.chat_postMessage(
         channel=channel_id, 
-        text=f":bubbles: Designing :: [{text}] | {task_queue.qsize()} design waiting...")
+        text=f":bubbles: Designing :: [{text}] | {task_queue.qsize()} design waiting..."
+        )
 
     return Response(), 200
 
@@ -122,9 +125,23 @@ def handle_design():
 @app.route('/develop', methods=['POST'])
 def handle_develop():
     data = request.form
+    user_id = data.get('user_id')
     channel_id = data.get('channel_id')
     text = data.get('text').strip("--")
-    client.chat_postMessage(channel=channel_id, text=f":building_construction: Developing :: [{text}]")
+
+    task = {
+        'type': 'develop',
+        'prompt': text,
+        'channel': channel_id,
+        'user_id': user_id,
+    }
+    task_queue.put(task)
+
+    client.chat_postMessage(
+        channel=channel_id, 
+        text=f":building_construction: Developing :: [{text}]"
+        )
+    
     return Response(), 200
 
 

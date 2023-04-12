@@ -24,7 +24,7 @@ class ArchiDiffusionModel:
         if develop_model is None:
             develop_model = "lambdalabs/sd-image-variations-diffusers"
         self.design_model = self._get_design_model(design_model)
-        # self.develop_model = self._get_develop_model(develop_model)
+        self.develop_model = self._get_develop_model(develop_model)
 
     def _get_design_model(self, model_name):
         pipe = StableDiffusionPipeline.from_pretrained(model_name, torch_dtype=self.precision)
@@ -76,11 +76,14 @@ class ArchiDiffusionModel:
     def run(self, task_queue, processed_queue):
         while True:
             task = task_queue.get()
-            prompt = task['prompt']
 
-            img_names = self.design(prompt)
+            prompt = task['prompt']
+            if task['type'] == 'design':
+                img_names = self.design(prompt)
+            else:
+                img_names = self.develop(prompt)
+
             task["img_names"] = img_names
-            
             processed_queue.put(task)
             # TODO: maybe not needed, since not using join method
             task_queue.task_done()
