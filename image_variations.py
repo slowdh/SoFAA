@@ -1,3 +1,4 @@
+#%%
 import torch
 from diffusers import StableDiffusionImageVariationPipeline
 from PIL import Image
@@ -20,6 +21,7 @@ pipe.enable_xformers_memory_efficient_attention()
 pipe.unet.to(memory_format=torch.channels_last)
 # pipe.enable_attention_slicing()
 
+#%%
 # image preprocessing
 im = Image.open("/home/fastdh/server/SoFAA/test_imgs/ast.png")
 tform = transforms.Compose([
@@ -39,4 +41,6 @@ with torch.inference_mode():
   out = pipe(inp, guidance_scale=3)
 
 out["images"][0].save("/home/fastdh/server/SoFAA/test_imgs/variation_result.jpg")
-out["images"][0].show()
+# out["images"][0].show()
+display(out["images"][0])
+# %%

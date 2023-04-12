@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 from flask import Flask, request, Response
 from slackeventsapi import SlackEventAdapter
 
+from models import ArchiDiffusionModel
+
 
 # Prepare apps
 # run local tunnel first
@@ -20,9 +22,12 @@ slack_event_adapter = SlackEventAdapter(SIGNING_SECRET, '/slack/events', app)
 
 client = slack.WebClient(token=SLACK_TOKEN)
 BOT_ID = client.api_call("auth.test")['user_id']
+IMG_DIR = "/home/fastdh/server/SoFAA/bot/imgs_generated"
 # TODO: this should be saved in the db.
 current_users = set()
 
+# set model
+sofaa = ArchiDiffusionModel(batch_size=1, num_inference_steps=10)
 
 # functions
 def get_welcome_message():
@@ -34,9 +39,9 @@ def get_welcome_message():
                 ':bubbles: *SoFAA에 오신 것을 환영합니다!* \n\n\n'
                 'SoFAA는 현재 영어만 지원하고 있으며, 디자인은 #design 채널에서 생성 가능합니다. \n\n\n\n\n'
                 '#design 채널에서 다음 명령어를 입력해서 디자인을 진행해보세요. \n\n\n'
-                ':classical_building: */design 명령어와 --키워드1 --키워드2 --키워드3 ... 방식으로 디자인을 생성해보세요.* \n\n\n'
+                ':art: */design 명령어와 --키워드1 --키워드2 --키워드3 ... 방식으로 디자인을 생성해보세요.* \n\n\n'
                 'ex) /design --organic --futuristic --zaha hadid --sunset\n\n\n'
-                ':classical_building: */develop 명령어와 --image_id 입력을 통해서 생성된 디자인을 디벨롭해보세요.* \n\n\n'
+                ':building_construction: */develop 명령어와 --image_id 입력을 통해서 생성된 디자인을 디벨롭해보세요.* \n\n\n'
                 'ex) /develop --id0123984213 \n\n\n'
                 '(develop을 먼저 진행하시면 id가 이미지와 함께 제공됩니다.) \n\n\n\n\n'
                 '각 명령어는 4장의 이미지를 생성합니다. \n\n\n'
@@ -74,9 +79,20 @@ def handle_explain_message(payload):
 def handle_design():
     data = request.form
     channel_id = data.get('channel_id')
-    text = data.get('text').strip("--").replace("--", ', ')
+    text = data.get('text')
     client.chat_postMessage(channel=channel_id, text=f":bubbles: Designing :: [{text}]")
 
+    prompt = text.strip("--").replace("--", ', ')
+    img_names = sofaa.design(prompt)
+
+    sample_img = img_names[0]
+
+    response = client.files_upload(
+        title="My Test Text File",
+        file=f"{IMG_DIR}/{sample_img}.jpg",
+        channels="#test",
+    )
+        
     return Response(), 200
 
 
@@ -86,7 +102,6 @@ def handle_develop():
     channel_id = data.get('channel_id')
     text = data.get('text').strip("--")
     client.chat_postMessage(channel=channel_id, text=f":building_construction: Developing :: [{text}]")
-
     return Response(), 200
 
 
