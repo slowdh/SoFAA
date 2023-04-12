@@ -1,4 +1,7 @@
 import os
+from queue import Queue, Empty
+from threading import Thread
+import time
 from pprint import pprint
 
 import slack
@@ -8,10 +11,9 @@ from slackeventsapi import SlackEventAdapter
 
 from models import ArchiDiffusionModel
 
-
 # Prepare apps
-# run local tunnel first
-# https://slackbotforsofaa2023.loca.lt
+# run serveo first
+# https://slackbotforsofaa2023.serveo.net
 
 load_dotenv()
 SLACK_TOKEN = os.environ['SLACK_TOKEN']
@@ -26,10 +28,29 @@ IMG_DIR = "/home/fastdh/server/SoFAA/bot/imgs_generated"
 # TODO: this should be saved in the db.
 current_users = set()
 
-# set model
+# set queue, model
+task_queue = Queue()
+processed_queue = Queue()
 sofaa = ArchiDiffusionModel(batch_size=1, num_inference_steps=10)
 
 # functions
+def upload_file_to_slack_client(processed_queue):
+    while True:
+        task = processed_queue.get()
+        img_names = task['img_names']
+        channel_id = task['channel']
+        prompt = task['prompt']
+        
+        for name in img_names:
+            client.files_upload(
+                title=prompt,
+                file=f"{IMG_DIR}/{name}.jpg",
+                channels=channel_id,
+                initial_comment=f"다음 명령어로 디자인을 디벨롭하세요: /develop --{name}"
+            )
+
+        processed_queue.task_done()
+
 def get_welcome_message():
     return [{
     'type': 'section',
@@ -78,21 +99,23 @@ def handle_explain_message(payload):
 @app.route('/design', methods=['POST'])
 def handle_design():
     data = request.form
+    user_id = data.get('user_id')
+    # user_name = data.get('user_name')
+    # TODO: for now upload images to channel directly, not reply in thread
     channel_id = data.get('channel_id')
     text = data.get('text')
-    client.chat_postMessage(channel=channel_id, text=f":bubbles: Designing :: [{text}]")
-
     prompt = text.strip("--").replace("--", ', ')
-    img_names = sofaa.design(prompt)
 
-    sample_img = img_names[0]
+    task = {
+        'prompt': prompt,
+        'channel': channel_id,
+        'user_id': user_id,
+    }
+    task_queue.put(task)
+    client.chat_postMessage(
+        channel=channel_id, 
+        text=f":bubbles: Designing :: [{text}] | {task_queue.qsize()} design waiting...")
 
-    response = client.files_upload(
-        title="My Test Text File",
-        file=f"{IMG_DIR}/{sample_img}.jpg",
-        channels="#test",
-    )
-        
     return Response(), 200
 
 
@@ -106,5 +129,9 @@ def handle_develop():
 
 
 if __name__ == '__main__':
+    design_thread = Thread(target=sofaa.run, args=(task_queue, processed_queue))
+    design_thread.start()
+    upload_thread = Thread(target=upload_file_to_slack_client, args=(processed_queue,))
+    upload_thread.start()
+    
     app.run(debug=True, port=5023)
- 
