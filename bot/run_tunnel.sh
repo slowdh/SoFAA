@@ -1,1 +1,1 @@
-lt --port 5023 --subdomain slackbotforsofaa2023 --print-requests
+ssh -R slackbotforsofaa2023:80:localhost:5023 serveo.net
