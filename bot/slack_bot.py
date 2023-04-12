@@ -118,15 +118,18 @@ def handle_explain_message(payload):
 def handle_design():
     data = request.form
     user_id = data.get('user_id')
-    # user_name = data.get('user_name')
     # TODO: for now upload images to channel directly, not reply in thread
     channel_id = data.get('channel_id')
     text = data.get('text')
     prompt = text.strip("--").replace("--", ', ')
 
+    if channel_id != 'C0535RMS6U8':
+        client.chat_postMessage(channel=channel_id, text=f":bubbles: 디자인 명령어는 #design 채널에서 사용해주세요.")
+        return Response(), 200
+
     chat_response = client.chat_postMessage(
         channel=channel_id, 
-        text=f":bubbles: Designing :: [{text}] | {task_queue.qsize()} design waiting..."
+        text=f":bubbles: Designing :: {text} | {task_queue.qsize()} waiting..."
         )
     
     task = {
@@ -148,9 +151,13 @@ def handle_develop():
     channel_id = data.get('channel_id')
     text = data.get('text').strip("--")
 
+    if channel_id != 'C0535RMS6U8':
+        client.chat_postMessage(channel=channel_id, text=f":bubbles: 디자인 명령어는 #design 채널에서 사용해주세요.")
+        return Response(), 200
+
     chat_response = client.chat_postMessage(
         channel=channel_id, 
-        text=f":building_construction: Developing :: [{text}]"
+        text=f":building_construction: Developing :: [{text}] | {task_queue.qsize()} waiting..."
         )
     
     task = {
