@@ -31,24 +31,41 @@ current_users = set()
 # set queue, model
 task_queue = Queue()
 processed_queue = Queue()
-sofaa = ArchiDiffusionModel(batch_size=4, num_inference_steps=10)
+sofaa = ArchiDiffusionModel(batch_size=4, num_inference_steps=25)
 
 # functions
 def upload_file_to_slack_client(processed_queue):
     while True:
         task = processed_queue.get()
+        task_type = task['type']
         img_names = task['img_names']
         channel_id = task['channel']
         prompt = task['prompt']
+        thread_ts = task['thread_ts']
+        user_id = task['user_id']
         
+        if task_type == "develop":
+            client.files_upload(
+                title=prompt,
+                file=f"{IMG_DIR}/{prompt}.jpg",
+                channels=channel_id,
+                initial_comment=f"다음 디자인으로부터 디자인을 발전시켜 보았습니다.",
+                thread_ts=thread_ts
+            )
+
         for name in img_names:
             client.files_upload(
                 title=prompt,
                 file=f"{IMG_DIR}/{name}.jpg",
                 channels=channel_id,
-                initial_comment=f"다음 명령어로 디자인을 디벨롭하세요: /develop --{name}"
+                initial_comment=f"다음 명령어로 디자인을 발전시켜 보세요: /develop --{name}",
+                thread_ts=thread_ts
             )
 
+        client.chat_postMessage(channel=channel_id,
+                                thread_ts=thread_ts,
+                                text=f":bubbles: <@{user_id}>님 요청하신 작업이 완료되었습니다.")
+        
         processed_queue.task_done()
 
 def get_welcome_message():
@@ -105,19 +122,20 @@ def handle_design():
     channel_id = data.get('channel_id')
     text = data.get('text')
     prompt = text.strip("--").replace("--", ', ')
-
+    
+    chat_response = client.chat_postMessage(
+        channel=channel_id, 
+        text=f":bubbles: Designing :: [{text}] | {task_queue.qsize()} design waiting..."
+        )
+    
     task = {
         'type': 'design',
         'prompt': prompt,
         'channel': channel_id,
         'user_id': user_id,
+        'thread_ts': chat_response.get('ts')
     }
     task_queue.put(task)
-
-    client.chat_postMessage(
-        channel=channel_id, 
-        text=f":bubbles: Designing :: [{text}] | {task_queue.qsize()} design waiting..."
-        )
 
     return Response(), 200
 
@@ -129,19 +147,20 @@ def handle_develop():
     channel_id = data.get('channel_id')
     text = data.get('text').strip("--")
 
+    chat_response = client.chat_postMessage(
+        channel=channel_id, 
+        text=f":building_construction: Developing :: [{text}]"
+        )
+    
     task = {
         'type': 'develop',
         'prompt': text,
         'channel': channel_id,
         'user_id': user_id,
+        'thread_ts': chat_response.get('ts')
     }
     task_queue.put(task)
 
-    client.chat_postMessage(
-        channel=channel_id, 
-        text=f":building_construction: Developing :: [{text}]"
-        )
-    
     return Response(), 200
 
 
