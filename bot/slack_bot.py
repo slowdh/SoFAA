@@ -11,9 +11,6 @@ from slackeventsapi import SlackEventAdapter
 
 from models import ArchiDiffusionModel
 
-# Prepare apps
-# run serveo first
-# https://slackbotforsofaa2023.serveo.net
 
 load_dotenv()
 SLACK_TOKEN = os.environ['SLACK_TOKEN']
@@ -100,6 +97,7 @@ def handle_member_joined_channel(payload):
         current_users.add(user_id)
         welcome_msg = get_welcome_message()
         client.chat_postMessage(channel=f'@{user_id}', blocks=welcome_msg)
+        client.chat_postMessage(channel='C053KNBDSRW', text=f":bubbles: <@{user_id}>님 환영합니다! SoFAA 사용법을 DM으로 받지 못하셨다면 !설명 명령어를 입력해주세요.")
 
 
 @slack_event_adapter.on('message')
@@ -173,10 +171,12 @@ def handle_develop():
     return Response(), 200
 
 
+# make threads
+design_thread = Thread(target=sofaa.run, args=(task_queue, processed_queue))
+design_thread.start()
+upload_thread = Thread(target=upload_file_to_slack_client, args=(processed_queue,))
+upload_thread.start()
+
+
 if __name__ == '__main__':
-    design_thread = Thread(target=sofaa.run, args=(task_queue, processed_queue))
-    design_thread.start()
-    upload_thread = Thread(target=upload_file_to_slack_client, args=(processed_queue,))
-    upload_thread.start()
-    
     app.run(debug=False, host='0.0.0.0', port=5023)
