@@ -49,7 +49,7 @@ def upload_file_to_slack_client(processed_queue):
                 title=prompt,
                 file=f"{IMG_DIR}/{prompt}.jpg",
                 channels=channel_id,
-                initial_comment=f"다음 디자인으로부터 디자인을 발전시켜 보았습니다.",
+                initial_comment=f"다음 이미지로부터 디자인을 발전시켜 보았습니다.",
                 thread_ts=thread_ts
             )
 
@@ -77,12 +77,13 @@ def get_welcome_message():
                 ':bubbles: *SoFAA에 오신 것을 환영합니다!* \n\n'
                 'SoFAA는 현재 영어만 지원하고 있으며, 디자인은 #design 채널에서 생성 가능합니다. \n\n'
                 '#design 채널에서 다음 명령어를 입력해서 디자인을 진행해보세요. \n\n'
-                ':art: */design 명령어와 --키워드1 --키워드2 --키워드3 ... 방식으로 디자인을 생성해보세요.* \n\n'
-                '키워드 간 띄어쓰기가 가능하고 구체적인 설명 또한 입력 가능합니다\n\n'
-                'ex) /design --organic --futuristic --like zaha hadid --concrete material \n\n'
+                ':art: */design 명령어와 키워드1, 키워드2, 키워드3 ... 방식으로 디자인을 생성해보세요.* \n\n'
+                '키워드 내 띄어쓰기가 가능하고, 구체적인 묘사 또한 입력 가능합니다. \n\n'
+                '아래 예시를 #design 채널에서 사용해보세요.\n\n'
+                'ex) /design swimming pool in baroque style building, inside, highly detailed, eye level  \n\n'
                 ':building_construction: */develop 명령어와 --image_id 입력을 통해서 생성된 디자인을 디벨롭해보세요.* \n\n'
-                'develop을 먼저 진행하시면 id가 이미지와 함께 제공됩니다. \n\n'
-                'ex) /develop --id0123984213 \n\n'
+                'design을 먼저 진행하시면 id가 이미지와 함께 제공됩니다. 원하시는 이미지 태그를 복사 붙혀넣기를 해보세요. \n\n'
+                'ex) /develop --3S0N70H7KGMHLFIP \n\n'
                 '각 명령어는 4장의 이미지를 생성합니다. \n\n'
                 '생성 속도가 느리다면 조금만 기다려주세요. 개인 서버로 운영되고 있어서 처리 속도가 느릴 수 있습니다. \n\n'
                 '문제가 생길 시 @dev_SoFAA 로 DM을 주시면 처리 도와드리겠습니다.'
@@ -129,7 +130,7 @@ def handle_design():
 
     chat_response = client.chat_postMessage(
         channel=channel_id, 
-        text=f":bubbles: Designing :: {text} | {task_queue.qsize()} waiting..."
+        text=f":bubbles: Designing :: {text}"
         )
     
     task = {
@@ -157,7 +158,7 @@ def handle_develop():
 
     chat_response = client.chat_postMessage(
         channel=channel_id, 
-        text=f":building_construction: Developing :: [{text}] | {task_queue.qsize()} waiting..."
+        text=f":building_construction: Developing :: [{text}]"
         )
     
     task = {
@@ -178,4 +179,4 @@ if __name__ == '__main__':
     upload_thread = Thread(target=upload_file_to_slack_client, args=(processed_queue,))
     upload_thread.start()
     
-    app.run(debug=True, port=5023)
+    app.run(debug=False, host='0.0.0.0', port=5023)
