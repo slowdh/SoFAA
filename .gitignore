@@ -132,3 +132,4 @@ dmypy.json
 # generated ouputs
 /test_imgs
 /bot/imgs_generated
+/bot/test/imgs_generated
